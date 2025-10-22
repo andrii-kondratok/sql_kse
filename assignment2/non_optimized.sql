@@ -1,6 +1,4 @@
 use hw2;
-DROP INDEX ix_enc_location ON dnd_encounters;
-DROP INDEX ix_items_type_effect  ON dnd_items_num;
 SELECT
   c.id,
   c.name,
@@ -13,7 +11,7 @@ FROM
    WHERE id > 1000) AS c
 JOIN
   (SELECT id, item_type, effect
-   FROM dnd_items_num
+   FROM dnd_items_num USE INDEX (ix_items_type_effect)
    WHERE item_type > 4
      AND effect BETWEEN 3 AND 7) AS i -- ще один сабселект
   ON i.id = c.id
