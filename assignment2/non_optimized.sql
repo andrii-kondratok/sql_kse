@@ -11,7 +11,7 @@ FROM
    WHERE id > 1000) AS c
 JOIN
   (SELECT id, item_type, effect
-   FROM dnd_items_num USE INDEX (ix_items_type_effect)
+   FROM dnd_items_num USE INDEX (ix_items_type_effect) -- тільки харм для програми, вона б і так розуміла, що треба використати цей індекс
    WHERE item_type > 4
      AND effect BETWEEN 3 AND 7) AS i -- ще один сабселект
   ON i.id = c.id
