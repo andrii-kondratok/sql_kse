@@ -1,0 +1,12 @@
+-- revenue by books
+SELECT b.title, SUM(f.total_amount) AS total_sales
+FROM bookstore_dw.fact_orders f
+JOIN bookstore_dw.dim_book b ON f.book_sk = b.book_id
+GROUP BY b.title
+ORDER BY total_sales DESC;
+
+-- revenue by customer loyalty level
+SELECT c.loyalty_level, SUM(f.total_amount) AS total_revenue
+FROM bookstore_dw.fact_orders f
+JOIN bookstore_dw.dim_customer c ON f.customer_sk = c.customer_id
+GROUP BY c.loyalty_level;
