@@ -1,0 +1,58 @@
+SELECT customer_id, loyalty_level
+FROM bookstore_dw.stg_customers
+WHERE customer_id = 1;
+
+SELECT customer_id, loyalty_level
+FROM bookstore_dw.dim_customer
+WHERE customer_id = 1;
+
+UPDATE bookstore_dw.stg_customers
+SET loyalty_level = 'FIRST'  -- our first custmer ever deserves some плюшкі
+WHERE customer_id = 1;
+
+-- make old row in dim table not current and add end_date
+UPDATE bookstore_dw.dim_customer AS d
+SET
+  d.end_date = CURRENT_DATE(),
+  d.is_current = FALSE
+FROM ( -- subquery that detects changer rows
+  SELECT s.customer_id
+  FROM bookstore_dw.stg_customers AS s
+  JOIN bookstore_dw.dim_customer AS cur
+    ON cur.customer_id = s.customer_id
+   AND cur.is_current = TRUE
+  WHERE
+    LOWER(TRIM(COALESCE(s.city, ''))) <> LOWER(TRIM(COALESCE(cur.city, '')))
+    OR LOWER(TRIM(COALESCE(s.loyalty_level, ''))) <> LOWER(TRIM(COALESCE(cur.loyalty_level, '')))
+    OR LOWER(TRIM(COALESCE(s.name, ''))) <> LOWER(TRIM(COALESCE(cur.name, '')))
+    OR LOWER(TRIM(COALESCE(s.email, ''))) <> LOWER(TRIM(COALESCE(cur.email, '')))
+    OR LOWER(TRIM(COALESCE(s.country, ''))) <> LOWER(TRIM(COALESCE(cur.country, '')))
+) AS changed
+WHERE d.is_current = TRUE
+  AND d.customer_id = changed.customer_id;
+
+
+INSERT INTO bookstore_dw.dim_customer ( -- insert into dim table the row from stage table
+  customer_id, name, email, city, country, loyalty_level,
+  start_date, end_date, is_current
+)
+SELECT
+  s.customer_id, s.name, s.email, s.city, s.country, s.loyalty_level,
+  CURRENT_DATE(),
+  CAST(NULL AS DATE),
+  TRUE
+FROM bookstore_dw.stg_customers AS s
+LEFT JOIN bookstore_dw.dim_customer AS cur
+  ON cur.customer_id = s.customer_id
+ AND cur.is_current = TRUE
+WHERE
+  cur.customer_id IS NULL
+  OR LOWER(TRIM(COALESCE(s.city, ''))) <> LOWER(TRIM(COALESCE(cur.city, '')))
+  OR LOWER(TRIM(COALESCE(s.loyalty_level, ''))) <> LOWER(TRIM(COALESCE(cur.loyalty_level, '')))
+  OR LOWER(TRIM(COALESCE(s.name, ''))) <> LOWER(TRIM(COALESCE(cur.name, '')))
+  OR LOWER(TRIM(COALESCE(s.email, ''))) <> LOWER(TRIM(COALESCE(cur.email, '')))
+  OR LOWER(TRIM(COALESCE(s.country, ''))) <> LOWER(TRIM(COALESCE(cur.country, '')))
+ORDER BY s.customer_id;
+-- look for changes
+SELECT * FROM bookstore_dw.dim_customer
+ORDER BY customer_id;
