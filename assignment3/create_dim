@@ -1,0 +1,75 @@
+-- creating dim and fact tables
+--DROP TABLE bookstore_dw.dim_customer;
+--DROP TABLE bookstore_dw.dim_book;
+--DROP TABLE bookstore_dw.dim_date;
+--DROP TABLE bookstore_dw.fact_orders;
+
+CREATE TABLE bookstore_dw.dim_customer (
+  customer_id INT64,
+  name STRING(100),
+  email STRING(100),
+  city STRING(50),
+  country STRING(50),
+  loyalty_level STRING(50),
+  start_date DATE,
+  end_date DATE,
+  is_current BOOLEAN,
+);
+
+CREATE TABLE bookstore_dw.dim_book (
+  book_id INT64,
+  title STRING(200),
+  author STRING(100),
+  genre STRING(50),
+  price FLOAT64,
+  publication_year INT64,
+  publisher STRING(100)
+);
+
+CREATE TABLE bookstore_dw.dim_date (
+  date_id INT64,
+  date_value DATE,
+  day INT64,
+  month INT64,
+  month_name STRING(20),
+  quarter INT64,
+  year INT64,
+  day_of_week STRING(20),
+  is_weekend BOOLEAN
+);
+
+CREATE TABLE bookstore_dw.fact_orders ( -- fact table
+  fact_id INT64,
+  order_id INT64,
+  date_id INT64,
+  customer_sk INT64,
+  book_sk INT64,
+  quantity INT64,
+  total_amount FLOAT64,
+  payment_method STRING(50)
+);
+
+-- inserting data
+
+INSERT INTO bookstore_dw.dim_book (book_id, title, author, genre, price, publication_year, publisher)
+SELECT DISTINCT book_id, title, author, genre, price, publication_year, publisher
+FROM bookstore_dw.stg_books;
+
+INSERT INTO bookstore_dw.dim_customer (customer_id, name, email, city, country, loyalty_level, start_date, end_date, is_current)
+SELECT customer_id, name, email, city, country, loyalty_level, CURRENT_DATE(), NULL, TRUE
+FROM bookstore_dw.stg_customers;
+
+
+INSERT INTO bookstore_dw.fact_orders (order_id, date_id, customer_sk, book_sk, quantity, total_amount, payment_method)
+SELECT 
+  o.order_id,
+  d.date_id,
+  c.customer_id,
+  b.book_id,
+  o.quantity,
+  o.total_amount,
+  o.payment_method
+FROM bookstore_dw.stg_orders o
+JOIN bookstore_dw.date_dim d ON o.order_date = d.date
+JOIN bookstore_dw.dim_customer c ON o.customer_id = c.customer_id AND c.is_current = TRUE
+JOIN bookstore_dw.dim_book b ON o.book_id = b.book_id;
