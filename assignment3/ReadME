@@ -1,0 +1,5 @@
+We decided to create a database of a bookstore.
+It has 4 tables: orders, customers, books, date, with the corresponding data.
+On the stage level, we cleaned the data and made sure all the values are valid.
+Then we kept customers, books, and date as dimensional tables, while orders was turned into a fact table by joining with others.
+Our DWH has 3 levels: raw, stage, and mart.
